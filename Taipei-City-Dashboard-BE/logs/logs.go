@@ -19,6 +19,14 @@ import (
 	"github.com/comail/colog"
 )
 
+type LogLevel int
+
+const (
+	InfoLevel  LogLevel = 1
+	WarnLevel  LogLevel = 2
+	ErrorLevel LogLevel = 3
+)
+
 func init() {
 	colog.SetFormatter(&colog.StdFormatter{
 		Colors: true,

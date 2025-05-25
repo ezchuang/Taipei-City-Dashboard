@@ -60,6 +60,12 @@ services:
       REDIS_PORT: ${REDIS_PORT}
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
       REDIS_DB: ${REDIS_DB}
+      ELK_URL: ${ELK_URL}
+      ELK_BUFFER_SIZE: ${ELK_BUFFER_SIZE}
+      ELK_WORKER_COUNT: ${ELK_WORKER_COUNT}
+      ELK_CONNECTION_MAXIDLE: ${ELK_CONNECTION_MAXIDLE}
+      ELK_CONNECTION_IDEL_TIMEOUT: ${ELK_CONNECTION_IDEL_TIMEOUT}
+      ELK_CONNECTION_IO_TIMEOUT: ${ELK_CONNECTION_IO_TIMEOUT}
     volumes:
       - ../Taipei-City-Dashboard-BE:/opt/Taipei-City-Dashboard-BE
     working_dir: /opt/Taipei-City-Dashboard-BE

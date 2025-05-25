@@ -12,14 +12,15 @@ package app
 
 import (
 	"TaipeiCityDashboardBE/app/cache"
+	"TaipeiCityDashboardBE/app/elk"
 	"TaipeiCityDashboardBE/app/initial"
 	"TaipeiCityDashboardBE/app/middleware"
 	"TaipeiCityDashboardBE/app/models"
 	"TaipeiCityDashboardBE/app/routes"
 	"TaipeiCityDashboardBE/global"
 	"TaipeiCityDashboardBE/logs"
-
 	"github.com/fvbock/endless"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -28,6 +29,9 @@ import (
 
 // StartApplication initiates the main backend application, including the Gin router, postgreSQL, and Redis.
 func StartApplication() {
+	// 0. create ELK message worker pool
+	elk.InitWorkerPool()
+
 	// 1. Connect to postgreSQL and Redis
 	models.ConnectToDatabases("MANAGER", "DASHBOARD")
 	cache.ConnectToRedis()
@@ -60,6 +64,10 @@ func StartApplication() {
 	// If the server stops, close the database connections
 	models.CloseConnects("MANAGER", "DASHBOARD")
 	cache.CloseConnect()
+
+	// If the server stop, ShutDown workers & connections
+	elk.MessageWorker.Shutdown()
+
 }
 
 func MigrateManagerSchema() {

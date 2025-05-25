@@ -14,6 +14,7 @@ import (
 	"TaipeiCityDashboardBE/app/controllers"
 	"TaipeiCityDashboardBE/app/middleware"
 	"TaipeiCityDashboardBE/global"
+	"TaipeiCityDashboardBE/logs"
 
 	"github.com/gin-gonic/gin"
 )
@@ -73,7 +74,7 @@ func configureUserRoutes() {
 // configureComponentRoutes configures all component routes.
 func configureComponentRoutes() {
 	componentRoutes := RouterGroup.Group("/component")
-
+	componentRoutes.Use(middleware.ElkLoggingMiddleware(logs.InfoLevel))
 	componentRoutes.Use(middleware.LimitAPIRequests(global.ComponentLimitAPIRequestsTimes, global.LimitRequestsDuration))
 	componentRoutes.Use(middleware.LimitTotalRequests(global.ComponentLimitTotalRequestsTimes, global.LimitRequestsDuration))
 	{
@@ -97,6 +98,7 @@ func configureComponentRoutes() {
 
 func configureDashboardRoutes() {
 	dashboardRoutes := RouterGroup.Group("/dashboard")
+	dashboardRoutes.Use(middleware.ElkLoggingMiddleware(logs.InfoLevel))
 	dashboardRoutes.Use(middleware.LimitAPIRequests(global.DashboardLimitAPIRequestsTimes, global.LimitRequestsDuration))
 	dashboardRoutes.Use(middleware.LimitTotalRequests(global.DashboardLimitTotalRequestsTimes, global.LimitRequestsDuration))
 	{
