@@ -65,7 +65,7 @@ func ElkLoggingMiddleware(levelThreshold logs.LogLevel) gin.HandlerFunc {
 			Message:         "",
 			RequestBody:     string(requestBody),
 			ResponseBody:    responseBody,
-			Latency:         latency.Microseconds(),
+			Latency:         latency.Milliseconds(),
 			HttpStatus:      c.Writer.Status(),
 		}
 
