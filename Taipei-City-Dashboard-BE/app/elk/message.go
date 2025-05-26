@@ -30,7 +30,7 @@ type ElkMessage struct {
 	Message         string        `json:"message"`
 	ApplicationName string        `json:"application_name"`
 	SourceIP        string        `json:"source_ip"`
-	Latency         int64         `json:"latency"`
+	Latency         int64         `json:"latency_ms"`
 	HttpStatus      int           `json:"http_status"`
 	RequestBody     string        `json:"request_body"`
 	ResponseBody    string        `json:"response_body"`
