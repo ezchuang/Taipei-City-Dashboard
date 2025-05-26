@@ -23,13 +23,17 @@ func InitWorkerPool() {
 }
 
 type ElkMessage struct {
-	Time     time.Time     `json:"time"`
-	LogLevel logs.LogLevel `json:"logLevel"`
-	ApiRoute string        `json:"apiRoute"`
-	Message  string        `json:"message"`
-	Server   string        `json:"server"`
-	SourceIP string        `json:"sourceIP"`
-	Latency  time.Duration `json:"latency"`
+	Time            time.Time     `json:"@timestamp"`
+	LogLevel        logs.LogLevel `json:"log_level"`
+	ApiRoute        string        `json:"api_route"`
+	RequestUrl      string        `json:"request_url"`
+	Message         string        `json:"message"`
+	ApplicationName string        `json:"application_name"`
+	SourceIP        string        `json:"source_ip"`
+	Latency         time.Duration `json:"latency"`
+	HttpStatus      int           `json:"http_status"`
+	RequestBody     string        `json:"request_body"`
+	ResponseBody    string        `json:"response_body"`
 }
 
 type MessageRingBuffer struct {
