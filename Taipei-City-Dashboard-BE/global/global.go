@@ -89,7 +89,7 @@ var (
 	}
 
 	ELK = ELKConfig{
-		URL:               getEnv("ELK_URL", ""),
+		URL:               getEnv("ELK_URL", "logstash-elk"),
 		BufferSize:        getIntEnv("ELK_BUFFER_SIZE", 2),
 		WorkerCount:       getIntEnv("ELK_WORKER_COUNT", 2),
 		ConnectionMaxIdle: getIntEnv("ELK_CONNECTION_MAXIDLE", 2),

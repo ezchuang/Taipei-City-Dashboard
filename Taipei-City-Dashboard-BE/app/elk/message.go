@@ -20,6 +20,13 @@ func InitWorkerPool() {
 	// Step 2: create worker pool
 	workerPool := NewWorkerPool(global.ELK.BufferSize, global.ELK.WorkerCount, connPool)
 	MessageWorker = workerPool
+
+	// Step 3: log config
+	configJsonBytes, err := json.Marshal(global.ELK)
+	if err != nil {
+		logs.Error("error marshaling struct: %v", err)
+	}
+	logs.Info(string(configJsonBytes))
 }
 
 type ElkMessage struct {
