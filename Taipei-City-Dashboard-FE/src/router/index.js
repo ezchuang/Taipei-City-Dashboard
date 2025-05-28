@@ -78,6 +78,11 @@ const routes = [
 		component: () => import("../views/admin/AdminDashboard.vue"),
 	},
 	{
+		path: "/admin/create-component",
+		name: "admin-create-component",
+		component: () => import("../views/admin/AdminEditComponent.vue"),
+	},
+	{
 		path: "/admin/edit-component",
 		name: "admin-edit-component",
 		component: () => import("../views/admin/AdminEditComponent.vue"),
@@ -196,9 +201,7 @@ router.beforeEach((to) => {
 // Handles admin related tasks (gets content for each route)
 router.beforeEach((to) => {
 	const adminStore = useAdminStore();
-	if (
-		to.path.toLowerCase() === "/admin/dashboard"
-	) {
+	if (to.path.toLowerCase() === "/admin/dashboard") {
 		adminStore.setRouteParams(to.query.city);
 	}
 });
