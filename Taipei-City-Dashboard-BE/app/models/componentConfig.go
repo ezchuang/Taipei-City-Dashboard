@@ -3,6 +3,7 @@ package models
 
 import (
 	"encoding/json"
+	"fmt"
 	"slices"
 	"time"
 
@@ -24,6 +25,7 @@ type QueryCharts struct {
 	Index string                   `json:"index"      gorm:"column:index;type:varchar"`
 	HistoryConfig  json.RawMessage `json:"history_config" gorm:"column:history_config;type:json"`
 	MapConfigIDs   pq.Int64Array   `json:"-" gorm:"column:map_config_ids;type:integer[]"`
+	MapConfigIndexes []string      `json:"map_config_indexes,omitempty"` // TEST
 	MapFilter      json.RawMessage `json:"map_filter" gorm:"column:map_filter;type:json"`
 	TimeFrom       string          `json:"time_from" gorm:"column:time_from;type:varchar"`
 	TimeTo         *string         `json:"time_to" gorm:"column:time_to;type:varchar"`
@@ -90,6 +92,28 @@ type ComponentChart struct {
 	Types pq.StringArray `json:"types" gorm:"column:types;type:varchar[]"`
 	Unit  string         `json:"unit" gorm:"column:unit;type:varchar"`
 }
+
+// CreateComponentPayload is the main request body structure for creating a new dashboard component.
+//
+// This struct is defined in the models package to be shared between controller and model layers,
+// following Go's best practices for avoiding circular dependencies. All related sub-objects needed
+// for the creation transaction are included as fields, so the controller can bind and validate
+// the incoming JSON directly into this struct.
+//
+// Controller should simply bind the JSON payload into CreateComponentPayload and pass it to the model.
+// All data extraction, validation, and database operations should be performed within the model layer.
+// This keeps the controller thin and maintains a clear separation of concerns.
+//
+// Note: If the payload structure changes in the future, only the model and this struct need to be updated;
+// the controller logic should remain minimal.
+type CreateComponentPayload struct {
+	Component       Component       `json:"component" binding:"required"`
+	ComponentMaps   []ComponentMap  `json:"component_maps"`
+	ComponentCharts []ComponentChart`json:"component_charts" binding:"required,len=1"`
+	QueryCharts     []QueryCharts   `json:"query_charts" binding:"required"`
+}
+
+
 /* ----- Handlers ----- */
 
 // createTempComponentDB joins the components, component_maps, and component_charts tables and selects the columns to return.
@@ -208,88 +232,76 @@ func GetComponentByIDAll(id int) (component []CityComponent, err error) {
 	return component, nil
 }
 
+func CreateFullComponent(payload *CreateComponentPayload) (CityComponent, error) {
+    tx := DBManager.Begin()
+    defer func() {
+        if r := recover(); r != nil {
+            tx.Rollback()
+            panic(r)
+        }
+    }()
 
-func CreateComponent(index string, name string, city string, historyConfig json.RawMessage, mapFilter json.RawMessage, timeFrom string, timeTo *string, updateFreq *int64, updateFreqUnit string, source string, shortDesc string, longDesc string, useCase string, links pq.StringArray, contributors pq.StringArray) (cityComponent CityComponent, err error) {
-    // component := Component{
-	// 	Index:			 index,
-    //     Name:            name,
-    //     // HistoryConfig:   historyConfig,
-    //     // MapFilter:       mapFilter,
-    //     // TimeFrom:        timeFrom,
-    //     // TimeTo:          timeTo,
-    //     // UpdateFreq:      updateFreq,
-    //     // UpdateFreqUnit:  updateFreqUnit,
-    //     // Source:          source,
-    //     // ShortDesc:       shortDesc,
-    //     // LongDesc:        longDesc,
-    //     // UseCase:         useCase,
-    //     // Links:           links,
-    //     // Contributors:    contributors,
-    //     // CreatedAt:       time.Now(),
-    //     // UpdatedAt:       time.Now(),
-    // }
+    // insert Component
+    if err := tx.Create(&payload.Component).Error; err != nil {
+        tx.Rollback()
+        return CityComponent{}, err
+    }
 
-	// queryCharts := QueryCharts{
-	// 	City: city,
-	// 	HistoryConfig: historyConfig, 
-	// 	MapFilter: mapFilter, 
-	// 	TimeFrom: timeFrom, 
-	// 	TimeTo: timeTo, 
-	// 	UpdateFreq: updateFreq, 
-	// 	UpdateFreqUnit: updateFreqUnit, 
-	// 	Source: source, 
-	// 	ShortDesc: shortDesc, 
-	// 	LongDesc: longDesc, 
-	// 	UseCase: useCase, 
-	// 	Links: links, 
-	// 	Contributors: contributors, 
-	// 	CreatedAt: time.Now(),
-	// 	UpdatedAt: time.Now(),
-	// }
+    // insert ComponentChart
+    chartCfg := payload.ComponentCharts[0]
+    chartCfg.Index = payload.Component.Index
+    if err := tx.Create(&chartCfg).Error; err != nil {
+        tx.Rollback()
+        return CityComponent{}, err
+    }
 
-	// cityComponent = CityComponent{
-	// 	Name: name,
-	// 	City: city,
-	// 	HistoryConfig: historyConfig, 
-	// 	MapFilter: mapFilter, 
-	// 	TimeFrom: timeFrom, 
-	// 	TimeTo: timeTo, 
-	// 	UpdateFreq: updateFreq, 
-	// 	UpdateFreqUnit: updateFreqUnit, 
-	// 	Source: source, 
-	// 	ShortDesc: shortDesc, 
-	// 	LongDesc: longDesc, 
-	// 	UseCase: useCase, 
-	// 	Links: links, 
-	// 	Contributors: contributors,
-	// 	CreatedAt: time.Now(),
-	// 	UpdatedAt: time.Now(),
-	// }
+    // insert ComponentMaps
+    // var newMapIDs []int64
+	indexToID := make(map[string]int64) // TEST
+    for i := range payload.ComponentMaps {
+        payload.ComponentMaps[i].Index = payload.Component.Index
+        if err := tx.Create(&payload.ComponentMaps[i]).Error; err != nil {
+            tx.Rollback()
+            return CityComponent{}, err
+        }
+        // newMapIDs = append(newMapIDs, payload.ComponentMaps[i].ID)
+		indexToID[payload.ComponentMaps[i].Index] = payload.ComponentMaps[i].ID // TEST
+    }
 
-	// 建立 logic 還不確定，無法實作
-	// 首先建立 components => 其次建立 query_charts ，但是 query_charts 有多個城市，不確定是一個建立還是同時建立
+    // insert QueryCharts
+    for i := range payload.QueryCharts {
+		var ids []int64  // TEST
+        for _, idx := range payload.QueryCharts[i].MapConfigIndexes {
+            id, ok := indexToID[idx]
+            if !ok {
+                tx.Rollback()
+                return CityComponent{}, fmt.Errorf("map_config_index '%s' not found", idx)
+            }
+            ids = append(ids, id)
+        } // TEST
+		
+        payload.QueryCharts[i].Index = payload.Component.Index
+		// TODO: when there are 2 map components
+        // payload.QueryCharts[i].MapConfigIDs = append(payload.QueryCharts[i].MapConfigIDs, newMapIDs...)
+        payload.QueryCharts[i].MapConfigIDs = ids // TEST
+		payload.QueryCharts[i].CreatedAt = time.Now()
+        payload.QueryCharts[i].UpdatedAt = time.Now()
+        if err := tx.Create(&payload.QueryCharts[i]).Error; err != nil {
+            tx.Rollback()
+            return CityComponent{}, err
+        }
+    }
 
-    // err = DBManager.Table("components").Create(&component).Error
-    // if err != nil {
-    //     return component, err
-    // }
+    // commit
+    tx.Commit()
 
-	// var tmp Component
-	// err = DBManager.Table("components").Where("name = ?", name).First(&tmp).Error
-	// if err != nil && errors.Is(err, gorm.ErrRecordNotFound){
-	// 	err = DBManager.Table("components").Create(&component).Error
-	// 	if err != nil {
-	// 		return cityComponent, err
-	// 	}	
-	// }
-
-
-	// err = DBManager.Table("query_charts").Create(&queryCharts).Error
-    // if err != nil {
-    //     return cityComponent, err
-    // }
-
-    return cityComponent, nil
+	// TODO: not a good practice for cities more than 2
+    // return first city as result
+    result, err := GetComponentByID(int(payload.Component.ID), payload.QueryCharts[0].City)
+    if err != nil {
+        return CityComponent{}, err
+    }
+    return result, nil
 }
 
 func UpdateComponent(id int, city string, name string, historyConfig json.RawMessage, mapFilter json.RawMessage, timeFrom string, timeTo *string, updateFreq *int64, updateFreqUnit string, source string, shortDesc string, longDesc string, useCase string, links pq.StringArray, contributors pq.StringArray) (cityComponent CityComponent, err error) {
