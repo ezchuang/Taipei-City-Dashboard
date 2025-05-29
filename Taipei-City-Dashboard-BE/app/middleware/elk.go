@@ -67,6 +67,7 @@ func ElkLoggingMiddleware(levelThreshold logs.LogLevel) gin.HandlerFunc {
 			ResponseBody:    responseBody,
 			Latency:         latency.Milliseconds(),
 			HttpStatus:      c.Writer.Status(),
+			HttpMethod:      c.Request.Method,
 		}
 
 		//publish message to ELK queue
