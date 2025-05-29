@@ -109,7 +109,7 @@ type ComponentChart struct {
 type CreateComponentPayload struct {
 	Component       Component       `json:"component" binding:"required"`
 	ComponentMaps   []ComponentMap  `json:"component_maps"`
-	ComponentCharts []ComponentChart`json:"component_charts" binding:"required,len=1"`
+	ComponentCharts ComponentChart`json:"component_charts" binding:"required,len=1"`
 	QueryCharts     []QueryCharts   `json:"query_charts" binding:"required"`
 }
 
@@ -248,7 +248,7 @@ func CreateFullComponent(payload *CreateComponentPayload) (CityComponent, error)
     }
 
     // insert ComponentChart
-    chartCfg := payload.ComponentCharts[0]
+    chartCfg := payload.ComponentCharts
     chartCfg.Index = payload.Component.Index
     if err := tx.Create(&chartCfg).Error; err != nil {
         tx.Rollback()
