@@ -93,19 +93,21 @@ type ComponentChart struct {
 	Unit  string         `json:"unit" gorm:"column:unit;type:varchar"`
 }
 
-// CreateComponentPayload is the main request body structure for creating a new dashboard component.
-//
-// This struct is defined in the models package to be shared between controller and model layers,
-// following Go's best practices for avoiding circular dependencies. All related sub-objects needed
-// for the creation transaction are included as fields, so the controller can bind and validate
-// the incoming JSON directly into this struct.
-//
-// Controller should simply bind the JSON payload into CreateComponentPayload and pass it to the model.
-// All data extraction, validation, and database operations should be performed within the model layer.
-// This keeps the controller thin and maintains a clear separation of concerns.
-//
-// Note: If the payload structure changes in the future, only the model and this struct need to be updated;
-// the controller logic should remain minimal.
+/*
+CreateComponentPayload is the main request body structure for creating a new dashboard component.
+
+This struct is defined in the models package to be shared between controller and model layers,
+following Go's best practices for avoiding circular dependencies. All related sub-objects needed
+for the creation transaction are included as fields, so the controller can bind and validate
+the incoming JSON directly into this struct.
+
+Controller should simply bind the JSON payload into CreateComponentPayload and pass it to the model.
+All data extraction, validation, and database operations should be performed within the model layer.
+This keeps the controller thin and maintains a clear separation of concerns.
+
+Note: If the payload structure changes in the future, only the model and this struct need to be updated;
+the controller logic should remain minimal.
+*/
 type CreateComponentPayload struct {
 	Component       Component       `json:"component" binding:"required"`
 	ComponentMaps   []ComponentMap  `json:"component_maps"`
@@ -281,7 +283,6 @@ func CreateFullComponent(payload *CreateComponentPayload) (CityComponent, error)
         } // TEST
 		
         payload.QueryCharts[i].Index = payload.Component.Index
-		// TODO: when there are 2 map components
         // payload.QueryCharts[i].MapConfigIDs = append(payload.QueryCharts[i].MapConfigIDs, newMapIDs...)
         payload.QueryCharts[i].MapConfigIDs = ids // TEST
 		payload.QueryCharts[i].CreatedAt = time.Now()
