@@ -179,12 +179,12 @@ func ImportTableFromCSV(tableName string, columnsJson string, file multipart.Fil
         return err
     }
 
-    columns = ensurePK(columns)
+    columns, pkAdded := ensurePK(columns)
 
     if err := createTableSQL(tableName, columns); err != nil {
         return err
     }
-    if err := importCSVRows(tableName, columns, fileBytes); err != nil {
+    if err := importCSVRows(tableName, columns, fileBytes, pkAdded); err != nil {
         return err
     }
     return nil
@@ -322,7 +322,7 @@ func isTableExists(table string) bool {
 }
 
 // ensurePK auto-adds id SERIAL PRIMARY KEY if none exists.
-func ensurePK(columns []ColumnDef) []ColumnDef {
+func ensurePK(columns []ColumnDef) ([]ColumnDef, bool) {
     hasPK := false
     for _, c := range columns {
         if c.IsPrimaryKey {
@@ -331,9 +331,9 @@ func ensurePK(columns []ColumnDef) []ColumnDef {
         }
     }
     if !hasPK {
-        return append([]ColumnDef{{Name: "id", Type: "SERIAL", NotNull: true, IsPrimaryKey: true, Comment: "Auto ID"}}, columns...)
+        return append([]ColumnDef{{Name: "id", Type: "SERIAL", NotNull: true, IsPrimaryKey: true, Comment: "Auto ID"}}, columns...), true
     }
-    return columns
+    return columns, false
 }
 
 func createTableSQL(tableName string, columns []ColumnDef) error {
@@ -424,17 +424,28 @@ func escapeSQLString(str string) string {
 }
 
 // importCSVRows reads and inserts all CSV rows, checking headers match columns.
-func importCSVRows(tableName string, columns []ColumnDef, fileBytes []byte) error {
+func importCSVRows(tableName string, columns []ColumnDef, fileBytes []byte, pkAdded bool) error {
     reader := csv.NewReader(strings.NewReader(string(fileBytes)))
-	reader.Read() // drop header
-
-    expectCols := []string{}
-    for _, c := range columns {
-		expectCols = append(expectCols, c.Name)
+	_, err := reader.Read() // drop header
+    if err != nil {
+        return fmt.Errorf("CSV header read failed: %v", err)
     }
 
-    placeholders := make([]string, len(expectCols))
-    for i := range expectCols { placeholders[i] = "?" }
+	insertCols := []string{}
+    if pkAdded {
+        for _, c := range columns {
+            if !(strings.ToLower(c.Name) == "id" && c.IsPrimaryKey) {
+                insertCols = append(insertCols, c.Name)
+            }
+        }
+    } else {
+        for _, c := range columns {
+            insertCols = append(insertCols, c.Name)
+        }
+    }
+
+    placeholders := make([]string, len(insertCols))
+    for i := range insertCols { placeholders[i] = "?" }
 
     tx := DBDashboard.Begin()
     for {
@@ -445,7 +456,7 @@ func importCSVRows(tableName string, columns []ColumnDef, fileBytes []byte) erro
         sql := fmt.Sprintf(
 			`INSERT INTO "%s" (%s) VALUES (%s)`, 
 			tableName,
-            `"` + strings.Join(expectCols, `","`) + `"`, 
+            `"` + strings.Join(insertCols, `","`) + `"`, 
 			strings.Join(placeholders, ","),
 		)
         if err := tx.Exec(sql, values...).Error; err != nil {
