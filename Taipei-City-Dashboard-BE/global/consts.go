@@ -23,6 +23,8 @@ const (
 	AuthLimitTotalRequestsTimes        = 600
 	UserLimitAPIRequestsTimes          = 100
 	UserLimitTotalRequestsTimes        = 500
+	TableLimitAPIRequestsTimes         = 100
+	TableLimitTotalRequestsTimes       = 500
 	ComponentLimitAPIRequestsTimes     = 200
 	ComponentLimitTotalRequestsTimes   = 1000
 	ContributorLimitAPIRequestsTimes   = 100
