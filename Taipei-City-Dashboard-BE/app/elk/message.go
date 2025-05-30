@@ -119,7 +119,13 @@ func NewConnectionPool(url string, maxIdle int, dialTimeout time.Duration, ioTim
 }
 
 func (p *ConnectionPool) dial() (net.Conn, error) {
-	return net.DialTimeout("tcp", p.url, p.dialTimeout)
+	conn, err := net.DialTimeout("tcp", p.url, p.dialTimeout)
+	if err == nil {
+		logs.Info("new connection success, url: %s", p.url)
+	} else {
+		logs.Warn("new connection fail, url: %s, error: %v", p.url, err)
+	}
+	return conn, err
 }
 
 func (p *ConnectionPool) Get() (net.Conn, error) {
@@ -200,7 +206,7 @@ func (wp *WorkerPool) start() {
 				default:
 					evt := wp.queue.Sub()
 					if err := wp.handle(evt); err != nil {
-						logs.Error("worker %d handle error: %v\n", id, err)
+						logs.Error("worker handle error: s\n", id, err)
 					}
 				}
 			}
@@ -233,7 +239,7 @@ func (wp *WorkerPool) handle(evt ElkMessage) error {
 	_ = conn.SetWriteDeadline(time.Now().Add(wp.poolConn.ioTimeout))
 	_, err = io.WriteString(conn, string(data)+"\n")
 	if err != nil {
-		logs.Warn("ELK write msg error: %v\n, elk connection close", err)
+		logs.Warn("ELK write msg error: \n, elk connection close", err)
 		conn.Close()
 		newConn, derr := wp.poolConn.dial()
 		if derr != nil {
