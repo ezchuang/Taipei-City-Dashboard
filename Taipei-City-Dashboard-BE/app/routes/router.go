@@ -14,6 +14,7 @@ import (
 	"TaipeiCityDashboardBE/app/controllers"
 	"TaipeiCityDashboardBE/app/middleware"
 	"TaipeiCityDashboardBE/global"
+	"TaipeiCityDashboardBE/logs"
 
 	"github.com/gin-gonic/gin"
 )
@@ -54,6 +55,7 @@ func configureAuthRoutes() {
 
 func configureUserRoutes() {
 	userRoutes := RouterGroup.Group("/user")
+	userRoutes.Use(middleware.ElkLoggingMiddleware(logs.InfoLevel))
 	userRoutes.Use(middleware.LimitAPIRequests(global.UserLimitAPIRequestsTimes, global.LimitRequestsDuration))
 	userRoutes.Use(middleware.LimitTotalRequests(global.UserLimitTotalRequestsTimes, global.TokenExpirationDuration))
 	userRoutes.Use(middleware.IsLoggedIn())
@@ -87,7 +89,7 @@ func configureTableRoutes() {
 // configureComponentRoutes configures all component routes.
 func configureComponentRoutes() {
 	componentRoutes := RouterGroup.Group("/component")
-
+	componentRoutes.Use(middleware.ElkLoggingMiddleware(logs.InfoLevel))
 	componentRoutes.Use(middleware.LimitAPIRequests(global.ComponentLimitAPIRequestsTimes, global.LimitRequestsDuration))
 	componentRoutes.Use(middleware.LimitTotalRequests(global.ComponentLimitTotalRequestsTimes, global.LimitRequestsDuration))
 	{
@@ -111,6 +113,7 @@ func configureComponentRoutes() {
 
 func configureDashboardRoutes() {
 	dashboardRoutes := RouterGroup.Group("/dashboard")
+	dashboardRoutes.Use(middleware.ElkLoggingMiddleware(logs.InfoLevel))
 	dashboardRoutes.Use(middleware.LimitAPIRequests(global.DashboardLimitAPIRequestsTimes, global.LimitRequestsDuration))
 	dashboardRoutes.Use(middleware.LimitTotalRequests(global.DashboardLimitTotalRequestsTimes, global.LimitRequestsDuration))
 	{
@@ -135,6 +138,7 @@ func configureDashboardRoutes() {
 
 func configureIssueRoutes() {
 	issueRoutes := RouterGroup.Group("/issue")
+	issueRoutes.Use(middleware.ElkLoggingMiddleware(logs.InfoLevel))
 	issueRoutes.Use(middleware.LimitAPIRequests(global.IssueLimitAPIRequestsTimes, global.LimitRequestsDuration))
 	issueRoutes.Use(middleware.LimitTotalRequests(global.IssueLimitTotalRequestsTimes, global.LimitRequestsDuration))
 	issueRoutes.Use(middleware.IsLoggedIn())
@@ -153,6 +157,7 @@ func configureIssueRoutes() {
 
 func configureIncidentRoutes() {
 	incidentRoutes := RouterGroup.Group("/incident")
+	incidentRoutes.Use(middleware.ElkLoggingMiddleware(logs.InfoLevel))
 	incidentRoutes.Use(middleware.LimitAPIRequests(global.IssueLimitAPIRequestsTimes, global.LimitRequestsDuration))
 	incidentRoutes.Use(middleware.LimitTotalRequests(global.IssueLimitTotalRequestsTimes, global.LimitRequestsDuration))
 	incidentRoutes.Use(middleware.IsLoggedIn())
@@ -167,6 +172,7 @@ func configureIncidentRoutes() {
 
 func configureContributorRoutes() {
 	contributorRoutes := RouterGroup.Group("/contributor")
+	contributorRoutes.Use(middleware.ElkLoggingMiddleware(logs.InfoLevel))
 	contributorRoutes.Use(middleware.LimitAPIRequests(global.ContributorLimitAPIRequestsTimes, global.LimitRequestsDuration))
 	contributorRoutes.Use(middleware.LimitTotalRequests(global.ContributorLimitTotalRequestsTimes, global.TokenExpirationDuration))
 	{

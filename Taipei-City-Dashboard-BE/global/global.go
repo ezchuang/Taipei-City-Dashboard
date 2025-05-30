@@ -4,12 +4,13 @@ import (
 	"TaipeiCityDashboardBE/logs"
 	"os"
 	"strconv"
+	"time"
 )
 
 // IssoConfig defines the structure for Isso configuration
 type IssoConfig struct {
-	IssoURL           string
-	TaipeipassURL     string
+	IssoURL       string
+	TaipeipassURL string
 	ClientID      string
 	ClientSecret  string
 }
@@ -31,15 +32,24 @@ type RedisConfig struct {
 	DB       int
 }
 
+type ELKConfig struct {
+	URL               string
+	BufferSize        int
+	WorkerCount       int
+	ConnectionMaxIdle int
+	IdleTimeout       time.Duration
+	IOTimeout         time.Duration
+}
+
 var (
-	JwtSecret = getEnv("JWT_SECRET","")
-	IDNoSalt = getEnv("IDNO_SALT","")
+	JwtSecret = getEnv("JWT_SECRET", "")
+	IDNoSalt  = getEnv("IDNO_SALT", "")
 	// gin addr
-    GinAddr = getEnv("GIN_DOMAIN","") + ":" + getEnv("GIN_PORT", "8080")
+	GinAddr = getEnv("GIN_DOMAIN", "") + ":" + getEnv("GIN_PORT", "8080")
 
 	// Retrieve default user information for the dashboard; only necessary in the init function.
-	DashboardDefaultUserName = getEnv("DASHBOARD_DEFAULT_USERNAME", "")
-	DashboardDefaultUserEmail = getEnv("DASHBOARD_DEFAULT_Email", "")
+	DashboardDefaultUserName     = getEnv("DASHBOARD_DEFAULT_USERNAME", "")
+	DashboardDefaultUserEmail    = getEnv("DASHBOARD_DEFAULT_Email", "")
 	DashboardDefaultUserPassword = getEnv("DASHBOARD_DEFAULT_PASSWORD", "")
 
 	// PostgresManager defines the configuration for the manager database
@@ -61,14 +71,14 @@ var (
 	}
 
 	// only used in the init function.
-	PostgresManagerSampleDataFile = getEnv("MANAGER_SAMPLE_FILE", "dashboardmanager-demo.sql")
-    PostgresDashboardSampleDataFile = getEnv("DASHBOARD_SAMPLE_FILE", "dashboard-demo.sql")
+	PostgresManagerSampleDataFile   = getEnv("MANAGER_SAMPLE_FILE", "dashboardmanager-demo.sql")
+	PostgresDashboardSampleDataFile = getEnv("DASHBOARD_SAMPLE_FILE", "dashboard-demo.sql")
 
 	Isso = IssoConfig{
-		IssoURL:          getEnv("ISSO_URL", "https://id.taipei/isso"),
-		TaipeipassURL:    getEnv("TAIPEIPASS_URL", "https://id.taipei/tpcd"),
-		ClientID:     getEnv("ISSO_CLIENT_ID", ""),
-		ClientSecret: getEnv("ISSO_CLIENT_SECRET", ""),
+		IssoURL:       getEnv("ISSO_URL", "https://id.taipei/isso"),
+		TaipeipassURL: getEnv("TAIPEIPASS_URL", "https://id.taipei/tpcd"),
+		ClientID:      getEnv("ISSO_CLIENT_ID", ""),
+		ClientSecret:  getEnv("ISSO_CLIENT_SECRET", ""),
 	}
 
 	Redis = RedisConfig{
@@ -77,11 +87,20 @@ var (
 		Password: getEnv("REDIS_PASSWORD", ""),
 		DB:       getIntEnv("REDIS_DB", 0),
 	}
+
+	ELK = ELKConfig{
+		URL:               getEnv("ELK_URL", "logstash-elk"),
+		BufferSize:        getIntEnv("ELK_BUFFER_SIZE", 2),
+		WorkerCount:       getIntEnv("ELK_WORKER_COUNT", 2),
+		ConnectionMaxIdle: getIntEnv("ELK_CONNECTION_MAXIDLE", 2),
+		IdleTimeout:       getDurationEnv("ELK_CONNECTION_IDEL_TIMEOUT", 1*time.Second),
+		IOTimeout:         getDurationEnv("ELK_CONNECTION_IO_TIMEOUT", 30*time.Second),
+	}
 )
 
 func init() {
 	logs.FInfo(PostgresDashboard.Host)
-	
+
 }
 
 func getEnv(key, fallback string) string {
@@ -102,5 +121,11 @@ func getIntEnv(key string, fallback int) int {
 	return fallback
 }
 
-
-
+func getDurationEnv(key string, fallback time.Duration) time.Duration {
+	if valStr, ok := os.LookupEnv(key); ok {
+		if val, err := time.ParseDuration(valStr); err == nil {
+			return val
+		}
+	}
+	return fallback
+}
