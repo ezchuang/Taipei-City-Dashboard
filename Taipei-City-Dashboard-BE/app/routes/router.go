@@ -33,6 +33,7 @@ func ConfigureRoutes() {
 	RouterGroup = Router.Group("/api/" + global.VERSION)
 	configureAuthRoutes()
 	configureUserRoutes()
+	configureTableRoutes()
 	configureComponentRoutes()
 	configureDashboardRoutes()
 	configureIssueRoutes()
@@ -69,6 +70,19 @@ func configureUserRoutes() {
 	{
 		userRoutes.GET("/", controllers.GetAllUsers)
 		userRoutes.PATCH("/:id", controllers.UpdateUserByID)
+	}
+}
+
+func configureTableRoutes() {
+    tableRoutes := RouterGroup.Group("/tables")
+    tableRoutes.Use(middleware.LimitAPIRequests(global.TableLimitAPIRequestsTimes, global.LimitRequestsDuration))
+    tableRoutes.Use(middleware.LimitTotalRequests(global.TableLimitTotalRequestsTimes, global.LimitRequestsDuration))
+	tableRoutes.Use(middleware.IsLoggedIn())
+	tableRoutes.Use(middleware.IsSysAdm())
+	{
+		tableRoutes.GET("/", controllers.ListTables)
+		tableRoutes.GET("/:tableName/sample", controllers.GetTableSample)
+		tableRoutes.POST("/import", controllers.ImportTableData)
 	}
 }
 

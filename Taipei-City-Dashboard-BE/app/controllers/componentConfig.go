@@ -43,27 +43,43 @@ type componentQuery struct {
 // FIXME:
 // 這邊的 component 是半成品，無法直接使用
 // 缺少 components.index(component_charts.index)，後續需要設計流程補上
+// func CreateComponent(c *gin.Context) {
+// 	var component models.Component
+// 	var queryChart models.QueryCharts
+// 	var cityComponent models.CityComponent
+
+// 	// 1. Bind the request body to the component and make sure it's valid
+// 	err := c.ShouldBindJSON(&component)
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+// 		return
+// 	}
+
+// 	// 2. Create the component
+// 	cityComponent, err = models.CreateComponent(component.Index, component.Name, queryChart.City, queryChart.HistoryConfig, queryChart.MapFilter, queryChart.TimeFrom, queryChart.TimeTo, queryChart.UpdateFreq, queryChart.UpdateFreqUnit, queryChart.Source, queryChart.ShortDesc, queryChart.LongDesc, queryChart.UseCase, queryChart.Links, queryChart.Contributors)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
+// 		return
+// 	}
+
+// 	// 3. Return the component
+// 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": cityComponent})
+// }
+
 func CreateComponent(c *gin.Context) {
-	var component models.Component
-	var queryChart models.QueryCharts
-	var cityComponent models.CityComponent
+    var payload models.CreateComponentPayload
+    if err := c.ShouldBindJSON(&payload); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+        return
+    }
 
-	// 1. Bind the request body to the component and make sure it's valid
-	err := c.ShouldBindJSON(&component)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
-		return
-	}
-
-	// 2. Create the component
-	cityComponent, err = models.CreateComponent(component.Index, component.Name, queryChart.City, queryChart.HistoryConfig, queryChart.MapFilter, queryChart.TimeFrom, queryChart.TimeTo, queryChart.UpdateFreq, queryChart.UpdateFreqUnit, queryChart.Source, queryChart.ShortDesc, queryChart.LongDesc, queryChart.UseCase, queryChart.Links, queryChart.Contributors)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
-		return
-	}
-
-	// 3. Return the component
-	c.JSON(http.StatusOK, gin.H{"status": "success", "data": cityComponent})
+    // 直接呼叫 Model 實作
+    result, err := models.CreateFullComponent(&payload)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
+        return
+    }
+    c.JSON(http.StatusOK, gin.H{"status": "success", "data": result})
 }
 
 func GetAllComponents(c *gin.Context) {
