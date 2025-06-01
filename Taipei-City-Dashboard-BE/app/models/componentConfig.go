@@ -24,7 +24,7 @@ type Component struct {
 type QueryCharts struct {
 	Index string                   `json:"index"      gorm:"column:index;type:varchar"`
 	HistoryConfig  json.RawMessage `json:"history_config" gorm:"column:history_config;type:json"`
-	MapConfigIDs   pq.Int64Array   `json:"-" gorm:"column:map_config_ids;type:integer[]"`
+	MapConfigIDs   pq.Int64Array   `json:"map_config_ids" gorm:"column:map_config_ids;type:integer[]"`
 	MapConfigIndexes []string      `json:"map_config_indexes,omitempty"` // TEST
 	MapFilter      json.RawMessage `json:"map_filter" gorm:"column:map_filter;type:json"`
 	TimeFrom       string          `json:"time_from" gorm:"column:time_from;type:varchar"`
@@ -38,10 +38,10 @@ type QueryCharts struct {
 	Links          pq.StringArray  `json:"links" gorm:"column:links;type:text[]"`
 	Contributors   pq.StringArray  `json:"contributors" gorm:"column:contributors;type:text[]"`
 	CreatedAt      time.Time       `json:"-" gorm:"column:created_at;type:timestamp with time zone;not null"`
-	UpdatedAt      time.Time       `json:"updated_at" gorm:"column:updated_at;type:timestamp with time zone;not null"`
+	UpdatedAt      time.Time       `json:"-" gorm:"column:updated_at;type:timestamp with time zone;not null"`
 	QueryType      string          `json:"query_type" gorm:"column:query_type;type:varchar"`
-	QueryChart     string          `json:"-" gorm:"column:query_chart;type:text"`
-	QueryHistory   string          `json:"-" gorm:"column:query_history;type:text"`
+	QueryChart     string          `json:"query_chart" gorm:"column:query_chart;type:text"`
+	QueryHistory   string          `json:"query_history" gorm:"column:query_history;type:text"`
 	City		   string          `json:"city" gorm:"column:city;type:text"`
 }
 
@@ -51,7 +51,7 @@ type CityComponent struct{
 	Name           string          `json:"name"`
 	ChartConfig    json.RawMessage `json:"chart_config"`
 	HistoryConfig  json.RawMessage `json:"history_config"`
-	MapConfigIDs   pq.Int64Array   `json:"-"  gorm:"type:integer[]"`
+	MapConfigIDs   pq.Int64Array   `json:"map_config_ids" gorm:"type:integer[]"`
 	MapConfig      json.RawMessage `json:"map_config"`
 	MapFilter      json.RawMessage `json:"map_filter"`
 	TimeFrom       string          `json:"time_from"`
@@ -74,15 +74,15 @@ type CityComponent struct{
 
 // ComponentMap is the model for the component_maps table.
 type ComponentMap struct {
-	ID       int64            `json:"id" gorm:"column:id;autoincrement;primaryKey"`
+	ID       int64            `json:"id"         gorm:"column:id;autoincrement;primaryKey"`
 	Index    string           `json:"index"      gorm:"column:index;type:varchar;not null"`
 	Title    string           `json:"title"      gorm:"column:title;type:varchar;not null"`
 	Type     string           `json:"type"       gorm:"column:type;type:varchar;not null"`
 	Source   string           `json:"source"     gorm:"column:source;type:varchar;not null"`
 	Size     *string          `json:"size"       gorm:"column:size;type:varchar"`
 	Icon     *string          `json:"icon"       gorm:"column:icon;type:varchar"`
-	Paint    *json.RawMessage `json:"paint" gorm:"column:paint;type:json"`
-	Property *json.RawMessage `json:"property" gorm:"column:property;type:json"`
+	Paint    *json.RawMessage `json:"paint"      gorm:"column:paint;type:json"`
+	Property *json.RawMessage `json:"property"   gorm:"column:property;type:json"`
 }
 
 // ComponentChart is the model for the component_charts table.
@@ -111,7 +111,7 @@ the controller logic should remain minimal.
 type CreateComponentPayload struct {
 	Component       Component       `json:"component" binding:"required"`
 	ComponentMaps   []ComponentMap  `json:"component_maps"`
-	ComponentCharts ComponentChart`json:"component_charts" binding:"required,len=1"`
+	ComponentCharts ComponentChart  `json:"component_charts" binding:"required"`
 	QueryCharts     []QueryCharts   `json:"query_charts" binding:"required"`
 }
 
